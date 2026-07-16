@@ -27,7 +27,8 @@ This list separates the minimum work for a convincing hackathon demo from the wo
 
 ## Flights and stays with real prices
 
-- [ ] Add an origin airport field to the onboarding flow.
+- [x] Add an optional departure-city field to the onboarding flow.
+- [x] Add outbound Google Flights and Booking.com searches using the selected route, dates, and group size; payments stay with the booking partner.
 - [ ] Add `AMADEUS_CLIENT_ID` and `AMADEUS_CLIENT_SECRET` to Vercel.
 - [ ] Exchange the Amadeus credentials for a server-side access token; cache it until expiry.
 - [ ] Call Amadeus Flight Offers Search with IATA origin/destination, ISO dates, and traveler count.
@@ -35,6 +36,11 @@ This list separates the minimum work for a convincing hackathon demo from the wo
 - [ ] Call Amadeus Hotel List followed by Hotel Search for eligible stay options.
 - [ ] Confirm final price and availability before presenting any “book” action.
 - [ ] Add outbound booking / affiliate links; do not process bookings until you have the required commercial agreement.
+
+## Reviews and recommendations
+
+- [x] Add a live review-search link to every recommended restaurant, attraction, and stay. The itinerary uses open place data instead of scraping review sites.
+- [ ] Use a licensed review/places API if star ratings or review excerpts must appear directly in the timeline.
 
 ## Shared trips and persistence
 
