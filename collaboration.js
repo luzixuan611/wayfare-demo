@@ -12,6 +12,7 @@
 
   const escapeHtml = value => String(value).replace(/[&<>'"]/g, char => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[char]));
   function save() { localStorage.setItem(crewKey, JSON.stringify(crew)); }
+  window.wayfareCrew = { members: () => crew.map(person => ({ ...person })) };
   function renderCrew() {
     card.innerHTML = `<div class="card-title"><span>Travel crew</span><span class="live-pill"><i></i> Live</span></div><p class="crew-sub">Everyone here can shape the itinerary.</p><div class="crew-list">${crew.map(person => `<div class="crew-person"><span class="crew-avatar" style="--avatar-color:${person.color}">${person.avatar}</span><div><b style="color:${person.color}">${escapeHtml(person.name)}${person.owner ? ' <small>you</small>' : ''}</b><span>${person.owner ? 'Planning this trip' : 'Can edit itinerary'}</span></div><i class="presence"></i></div>`).join('')}</div><button class="invite-button" id="invite-button">＋ Invite a friend</button><p class="crew-note">Share the invite link so friends can add ideas and edit the timeline.</p>`;
     document.querySelector('#invite-button').onclick = openInvite;

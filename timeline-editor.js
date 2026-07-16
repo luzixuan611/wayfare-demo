@@ -4,6 +4,7 @@
   if (!api || !timeline) return;
   const money = value => { const number = Number(String(value || '').replace(/[^0-9.]/g, '')); return Number.isFinite(number) ? number : 0; };
   const activeItems = () => api.trips[api.activeDay].items;
+  const crew = () => window.wayfareCrew?.members?.() || [{ name: 'You', color: '#d85d47', avatar: '✦', owner: true }];
 
   function renderSummary() {
     document.querySelector('.daily-spend')?.remove();
@@ -18,6 +19,15 @@
       if (row.dataset.enhanced) return;
       row.dataset.enhanced = 'true'; row.dataset.index = index; row.draggable = true;
       const card = row.querySelector('.event-card');
+      const author = activeItems()[index][8]?.author;
+      if (author?.name && author?.color) {
+        row.classList.add('item-edited');
+        card.style.setProperty('--editor-color', author.color);
+        const identity = document.createElement('span');
+        identity.className = 'edit-author';
+        identity.innerHTML = `<span>${author.avatar || '✦'}</span> Edited by ${author.name}`;
+        card.querySelector('.event-main div:last-child').append(identity);
+      }
       const button = document.createElement('button');
       button.className = 'edit-timeline-item'; button.type = 'button'; button.title = 'Edit this plan'; button.textContent = '✎';
       button.onclick = event => { event.stopPropagation(); openEdit(index); };
@@ -32,14 +42,16 @@
   function openEdit(index) {
     const entry = activeItems()[index];
     const safe = value => String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const people = crew();
+    const previousEditor = entry[8]?.author?.name || people[0]?.name;
     const modal = document.createElement('div');
     modal.className = 'crew-modal-backdrop';
-    modal.innerHTML = `<form class="crew-modal edit-item-modal"><button type="button" class="close" aria-label="Close">×</button><p class="eyebrow">EDIT TIMELINE ITEM</p><h2>Make it yours</h2><label>Time<input name="time" value="${safe(entry[0])}" required /></label><label>Plan name<input name="title" value="${safe(entry[3])}" required /></label><label>Place or note<input name="detail" value="${safe(entry[4])}" /></label><label>Actual cost<input name="price" value="${entry[5] === '—' ? '' : safe(entry[5])}" placeholder="e.g. ¥240" /></label><button class="plan-button" type="submit">Save changes <span>→</span></button><button class="delete-item" type="button">Remove from timeline</button></form>`;
+    modal.innerHTML = `<form class="crew-modal edit-item-modal"><button type="button" class="close" aria-label="Close">×</button><p class="eyebrow">EDIT TIMELINE ITEM</p><h2>Make it yours</h2><label>Editing as<select name="editor">${people.map(person => `<option value="${safe(person.name)}" ${person.name === previousEditor ? 'selected' : ''}>${safe(person.avatar)} ${safe(person.name)}${person.owner ? ' (you)' : ''}</option>`).join('')}</select></label><label>Time<input name="time" value="${safe(entry[0])}" required /></label><label>Plan name<input name="title" value="${safe(entry[3])}" required /></label><label>Place or note<input name="detail" value="${safe(entry[4])}" /></label><label>Actual cost<input name="price" value="${entry[5] === '—' ? '' : safe(entry[5])}" placeholder="e.g. ¥240" /></label><button class="plan-button" type="submit">Save changes <span>→</span></button><button class="delete-item" type="button">Remove from timeline</button></form>`;
     document.body.append(modal);
     modal.querySelector('.close').onclick = () => modal.remove();
     modal.onclick = event => { if (event.target === modal) modal.remove(); };
     modal.querySelector('.delete-item').onclick = () => { activeItems().splice(index, 1); modal.remove(); api.render(); api.toast('Item removed from timeline'); };
-    modal.querySelector('form').onsubmit = event => { event.preventDefault(); const data = new FormData(event.target); entry[0] = data.get('time'); entry[3] = data.get('title'); entry[4] = data.get('detail'); entry[5] = data.get('price') || '—'; modal.remove(); api.render(); api.toast('Timeline item updated'); };
+    modal.querySelector('form').onsubmit = event => { event.preventDefault(); const data = new FormData(event.target); const author = people.find(person => person.name === data.get('editor')) || people[0]; entry[0] = data.get('time'); entry[3] = data.get('title'); entry[4] = data.get('detail'); entry[5] = data.get('price') || '—'; entry[8] = { author: { name: author.name, color: author.color, avatar: author.avatar } }; modal.remove(); api.render(); api.toast(`Timeline item updated by ${author.name}`); };
   }
   new MutationObserver(enhance).observe(timeline, { childList: true, subtree: true });
   enhance();
