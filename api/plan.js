@@ -22,6 +22,7 @@ async function searchOpenPlaces(center) {
     nwr(around:8500,${center.lat},${center.lng})["amenity"="restaurant"]["name"];
     nwr(around:8500,${center.lat},${center.lng})["amenity"="cafe"]["name"];
     nwr(around:8500,${center.lat},${center.lng})["tourism"~"attraction|museum|gallery|zoo"]["name"];
+    nwr(around:8500,${center.lat},${center.lng})["historic"]["name"];
     nwr(around:8500,${center.lat},${center.lng})["leisure"="park"]["name"];
     nwr(around:8500,${center.lat},${center.lng})["tourism"~"hotel|guest_house|hostel"]["name"];
   );out center 60;`;
@@ -38,6 +39,28 @@ const pick = (places, index = 0, fallback) => places[index] || fallback;
 const detail = place => `${place.tags?.['addr:street'] || 'OpenStreetMap listing'} · Open data`;
 const item = (time, type, symbol, title, description, price, place) => [time, type, symbol, title, description, price, null, place?.point || null];
 const pointPlace = (name, point) => ({ name, tags: {}, point });
+const popularCityHighlights = {
+  hangzhou: ['West Lake', 'Lingyin Temple', 'Hefang Street', 'China National Tea Museum'],
+  tokyo: ['Senso-ji Temple', 'Meiji Jingu', 'Shibuya Crossing', 'Ueno Park'],
+  kyoto: ['Fushimi Inari Taisha', 'Kiyomizu-dera', 'Arashiyama Bamboo Grove', 'Nishiki Market'],
+  shanghai: ['The Bund', 'Yu Garden', 'Tianzifang', 'Shanghai Museum'],
+  beijing: ['Forbidden City', 'Temple of Heaven', 'Summer Palace', '798 Art District'],
+  paris: ['Louvre Museum', 'Eiffel Tower', 'Montmartre', 'Musée d’Orsay'],
+  london: ['British Museum', 'Tower of London', 'Borough Market', 'Tate Modern'],
+  rome: ['Colosseum', 'Trevi Fountain', 'Pantheon', 'Vatican Museums'],
+  berlin: ['Museum Island', 'Brandenburg Gate', 'East Side Gallery', 'Pergamon Panorama'],
+  newyork: ['Central Park', 'The Metropolitan Museum of Art', 'High Line', 'Brooklyn Bridge'],
+  'new york': ['Central Park', 'The Metropolitan Museum of Art', 'High Line', 'Brooklyn Bridge']
+};
+function fallbackSight(city, center, index) {
+  const key = city.toLowerCase().replace(/[^a-z\s]/g, '').trim();
+  const names = popularCityHighlights[key] || [`${city} city center`, `${city} old town`, `${city} main museum`, `${city} waterfront`];
+  return pointPlace(names[index % names.length], center);
+}
+function sightScore(place) {
+  const tags = place.tags || {};
+  return (tags.wikipedia ? 8 : 0) + (tags.wikidata ? 6 : 0) + (tags.website ? 3 : 0) + (tags.tourism === 'attraction' ? 5 : 0) + (tags.tourism === 'museum' ? 4 : 0) + (tags.historic ? 3 : 0) + (tags.description ? 1 : 0);
+}
 
 function tripDates(range) {
   const values = String(range || '').match(/\d{4}-\d{2}-\d{2}/g) || [];
@@ -92,18 +115,21 @@ export default async function handler(request, response) {
     const center = await geocode(destination);
     const [places, mustResult] = await Promise.all([searchOpenPlaces(center), mustVisit ? geocode(`${mustVisit}, ${destination}`).catch(() => null) : Promise.resolve(null)]);
     const food = byTag(places, tags => tags.amenity === 'restaurant' || tags.amenity === 'cafe');
-    const sights = byTag(places, tags => tags.tourism || tags.leisure === 'park');
+    const sights = byTag(places, tags => tags.tourism || tags.leisure === 'park' || tags.historic).sort((a, b) => sightScore(b) - sightScore(a));
     const stays = byTag(places, tags => accommodation === 'hostel' ? tags.tourism === 'hostel' : accommodation === 'homestay' ? tags.tourism === 'guest_house' : tags.tourism === 'hotel');
     const hotel = pick(stays, 0, pick(byTag(places, tags => ['hotel','guest_house','hostel'].includes(tags.tourism)), 0, pointPlace('Stay near city center', center)));
-    const firstSight = pick(sights, travelStyle === 'recharge' ? 1 : 0, pointPlace('Explore the city center', center));
-    const secondSight = pick(sights, travelStyle === 'recharge' ? 0 : 1, firstSight);
+    const city = center.name.split(',')[0];
+    const firstSight = pick(sights, travelStyle === 'recharge' ? 1 : 0, fallbackSight(city, center, 0));
+    const secondSight = pick(sights, travelStyle === 'recharge' ? 0 : 1, fallbackSight(city, center, 1));
+    const thirdSight = pick(sights, 2, fallbackSight(city, center, 2));
     const lunch = pick(food, 0, pointPlace('Local lunch stop', center)); const dinner = pick(food, 1, lunch);
-    const required = mustResult ? pointPlace(mustVisit, mustResult) : null; const city = center.name.split(',')[0];
+    const required = mustResult ? pointPlace(mustVisit, mustResult) : null;
     const selectedDates = tripDates(dates);
     const itineraryDates = selectedDates.length ? selectedDates : [new Date()];
     const trips = itineraryDates.map((date, index) => {
       const meta = dayMeta(date, index);
       const attraction = index % 2 ? secondSight : firstSight;
+      const laterAttraction = index % 3 ? thirdSight : secondSight;
       const meal = index % 2 ? lunch : dinner;
       const firstDay = index === 0;
       const finalDay = index === itineraryDates.length - 1;
@@ -123,7 +149,7 @@ export default async function handler(request, response) {
       ] : [
         item('10:00', 'sight', '◉', attraction.name, detail(attraction), 'Open listing', attraction),
         item('13:00', 'food', '♨', `Lunch: ${meal.name}`, detail(meal), 'Set actual cost', meal),
-        item('16:00', 'sight', '◉', 'Free time nearby', `Explore around ${city} at your own pace.`, 'Flexible')
+        item('16:00', 'sight', '◉', laterAttraction.name, `${detail(laterAttraction)} · A popular local highlight to consider.`, 'Open listing', laterAttraction)
       ];
       return { ...meta, title, weather: '✦ Explore', items: addTravelLegs(items) };
     });
