@@ -1,6 +1,12 @@
 const nominatimUrl = 'https://nominatim.openstreetmap.org/search';
 const overpassUrl = 'https://overpass-api.de/api/interpreter';
 const cache = new Map();
+async function fetchWithTimeout(url, options, timeout = 5000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+  try { return await fetch(url, { ...options, signal: controller.signal }); }
+  finally { clearTimeout(timer); }
+}
 
 async function geocode(destination) {
   const key = String(destination).trim().toLowerCase();
@@ -8,7 +14,7 @@ async function geocode(destination) {
   if (cached && Date.now() - cached.created < 300000) return cached.place;
   const url = new URL(nominatimUrl);
   url.searchParams.set('q', destination); url.searchParams.set('format', 'jsonv2'); url.searchParams.set('limit', '1');
-  const response = await fetch(url, { headers: { 'User-Agent': 'WayfareHackathon/1.0 (travel-planning-demo)' } });
+  const response = await fetchWithTimeout(url, { headers: { 'User-Agent': 'WayfareHackathon/1.0 (travel-planning-demo)' } }, 3000);
   if (!response.ok) throw new Error('City lookup failed');
   const [result] = await response.json();
   if (!result) throw new Error('Destination was not found');
@@ -18,7 +24,7 @@ async function geocode(destination) {
 }
 
 async function searchOpenPlaces(center) {
-  const query = `[out:json][timeout:20];(
+  const query = `[out:json][timeout:10];(
     nwr(around:8500,${center.lat},${center.lng})["amenity"="restaurant"]["name"];
     nwr(around:8500,${center.lat},${center.lng})["amenity"="cafe"]["name"];
     nwr(around:8500,${center.lat},${center.lng})["tourism"~"attraction|museum|gallery|zoo|viewpoint|artwork"]["name"];
@@ -26,8 +32,8 @@ async function searchOpenPlaces(center) {
     nwr(around:8500,${center.lat},${center.lng})["historic"]["name"];
     nwr(around:8500,${center.lat},${center.lng})["leisure"="park"]["name"];
     nwr(around:8500,${center.lat},${center.lng})["tourism"~"hotel|guest_house|hostel"]["name"];
-  );out center 120;`;
-  const response = await fetch(overpassUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain', 'User-Agent': 'WayfareHackathon/1.0 (travel-planning-demo)' }, body: query });
+  );out center 80;`;
+  const response = await fetchWithTimeout(overpassUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain', 'User-Agent': 'WayfareHackathon/1.0 (travel-planning-demo)' }, body: query }, 5000);
   if (!response.ok) throw new Error('Open place search failed');
   return (await response.json()).elements.map(element => ({
     id: element.id, osmType: element.type, name: element.tags?.name || 'Local place', tags: element.tags || {},
