@@ -40,7 +40,7 @@ const detail = place => `${place.tags?.['addr:street'] || 'OpenStreetMap listing
 const item = (time, type, symbol, title, description, price, place) => [time, type, symbol, title, description, price, null, place?.point || null];
 const pointPlace = (name, point) => ({ name, tags: {}, point });
 const popularCityHighlights = {
-  hangzhou: ['West Lake', 'Lingyin Temple', 'Hefang Street', 'China National Tea Museum'],
+  hangzhou: ['West Lake', 'Lingyin Temple', 'Hefang Street', 'China National Tea Museum', 'Leifeng Pagoda', 'Six Harmonies Pagoda', 'Xixi Wetland Park', 'Qinghefang Ancient Street'],
   tokyo: ['Senso-ji Temple', 'Meiji Jingu', 'Shibuya Crossing', 'Ueno Park'],
   kyoto: ['Fushimi Inari Taisha', 'Kiyomizu-dera', 'Arashiyama Bamboo Grove', 'Nishiki Market'],
   shanghai: ['The Bund', 'Yu Garden', 'Tianzifang', 'Shanghai Museum'],
@@ -119,17 +119,17 @@ export default async function handler(request, response) {
     const stays = byTag(places, tags => accommodation === 'hostel' ? tags.tourism === 'hostel' : accommodation === 'homestay' ? tags.tourism === 'guest_house' : tags.tourism === 'hotel');
     const hotel = pick(stays, 0, pick(byTag(places, tags => ['hotel','guest_house','hostel'].includes(tags.tourism)), 0, pointPlace('Stay near city center', center)));
     const city = center.name.split(',')[0];
-    const firstSight = pick(sights, travelStyle === 'recharge' ? 1 : 0, fallbackSight(city, center, 0));
-    const secondSight = pick(sights, travelStyle === 'recharge' ? 0 : 1, fallbackSight(city, center, 1));
-    const thirdSight = pick(sights, 2, fallbackSight(city, center, 2));
+    const fallbackSights = Array.from({ length: 8 }, (_, index) => fallbackSight(city, center, index));
+    const sightPool = [...sights, ...fallbackSights].filter((place, index, list) => list.findIndex(other => other.name.toLowerCase() === place.name.toLowerCase()) === index);
     const lunch = pick(food, 0, pointPlace('Local lunch stop', center)); const dinner = pick(food, 1, lunch);
     const required = mustResult ? pointPlace(mustVisit, mustResult) : null;
     const selectedDates = tripDates(dates);
     const itineraryDates = selectedDates.length ? selectedDates : [new Date()];
     const trips = itineraryDates.map((date, index) => {
       const meta = dayMeta(date, index);
-      const attraction = index % 2 ? secondSight : firstSight;
-      const laterAttraction = index % 3 ? thirdSight : secondSight;
+      const offset = travelStyle === 'recharge' ? 1 : 0;
+      const attraction = sightPool[(index + offset) % sightPool.length];
+      const laterAttraction = sightPool[(index + offset + 1) % sightPool.length];
       const meal = index % 2 ? lunch : dinner;
       const firstDay = index === 0;
       const finalDay = index === itineraryDates.length - 1;
@@ -153,7 +153,8 @@ export default async function handler(request, response) {
       ];
       return { ...meta, title, weather: '✦ Explore', items: addTravelLegs(items) };
     });
-    const recommendations = [...food.slice(0, 2), ...sights.slice(0, 1)].map((place, index) => [index < 2 ? '🍜' : '🌿', place.name, place.tags?.['addr:street'] || city, 'OpenStreetMap listing']);
+    const recommendationPlaces = [...food.slice(0, 2), ...sights.slice(0, 3), ...sightPool].filter((place, index, list) => list.findIndex(other => other.name === place.name) === index).slice(0, 3);
+    const recommendations = recommendationPlaces.map((place, index) => [place.tags?.amenity ? '🍜' : '🌿', place.name, place.tags?.['addr:street'] || city, 'OpenStreetMap listing']);
     return response.status(200).json({ city, dates, travelers, accommodation, source: 'open', estimate: budget ? `¥${budget}` : null, trips, recommendations, priceAlert });
   } catch {
     return response.status(502).json({ error: 'Open map data is temporarily unavailable. Please try again.' });
