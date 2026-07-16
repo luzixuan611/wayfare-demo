@@ -19,6 +19,14 @@
       if (row.dataset.enhanced) return;
       row.dataset.enhanced = 'true'; row.dataset.index = index; row.draggable = true;
       const card = row.querySelector('.event-card');
+      if (!card.querySelector('.place-photo')) {
+        const title = String(activeItems()[index][3] || '').toLowerCase();
+        const art = document.createElement('span');
+        art.className = 'activity-art';
+        art.textContent = typeArt(row.classList, title);
+        art.setAttribute('aria-hidden', 'true');
+        card.insertBefore(art, card.querySelector('.event-main'));
+      }
       const author = activeItems()[index][8]?.author;
       if (author?.name && author?.color) {
         row.classList.add('item-edited');
@@ -38,6 +46,15 @@
       row.addEventListener('drop', event => { event.preventDefault(); const from = Number(event.dataTransfer.getData('text/plain')); const to = Number(row.dataset.index); if (from === to || !Number.isInteger(from)) return; const items = activeItems(); const [moved] = items.splice(from, 1); items.splice(to, 0, moved); api.render(); api.toast('Timeline order updated'); });
     });
     renderSummary();
+  }
+  function typeArt(classes, title) {
+    if (classes.contains('food')) return /coffee|breakfast|café|cafe/.test(title) ? '☕' : '🍜';
+    if (classes.contains('stay')) return '🛏️';
+    if (classes.contains('transport')) return /flight|airport|✈/.test(title) ? '✈️' : '🚇';
+    if (/temple|shrine|pagoda|church/.test(title)) return '⛩️';
+    if (/museum|gallery|art/.test(title)) return '🖼️';
+    if (/park|lake|garden|wetland|beach/.test(title)) return '🌿';
+    return '📍';
   }
   function openEdit(index) {
     const entry = activeItems()[index];
