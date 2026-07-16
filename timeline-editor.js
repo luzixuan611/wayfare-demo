@@ -11,7 +11,7 @@
     const total = activeItems().reduce((sum, entry) => sum + money(entry[5]), 0);
     const summary = document.createElement('div');
     summary.className = 'daily-spend';
-    summary.innerHTML = `<span>DAY ${String(api.activeDay + 1).padStart(2, '0')} SPEND</span><b>¥${total.toLocaleString()}</b><small>Based on the costs you entered</small>`;
+    summary.innerHTML = `<span>DAY ${String(api.activeDay + 1).padStart(2, '0')} SPEND</span><b>${window.wayfareCurrency || '¥'}${total.toLocaleString()}</b><small>Based on the costs you entered</small>`;
     timeline.insertAdjacentElement('afterend', summary);
   }
   function enhance() {
@@ -65,6 +65,7 @@
     modal.className = 'crew-modal-backdrop';
     modal.innerHTML = `<form class="crew-modal edit-item-modal"><button type="button" class="close" aria-label="Close">×</button><p class="eyebrow">EDIT TIMELINE ITEM</p><h2>Make it yours</h2><label>Editing as<select name="editor">${people.map(person => `<option value="${safe(person.name)}" ${person.name === previousEditor ? 'selected' : ''}>${safe(person.avatar)} ${safe(person.name)}${person.owner ? ' (you)' : ''}</option>`).join('')}</select></label><label>Time<input name="time" value="${safe(entry[0])}" required /></label><label>Plan name<input name="title" value="${safe(entry[3])}" required /></label><label>Place or note<input name="detail" value="${safe(entry[4])}" /></label><label>Actual cost<input name="price" value="${entry[5] === '—' ? '' : safe(entry[5])}" placeholder="e.g. ¥240" /></label><button class="plan-button" type="submit">Save changes <span>→</span></button><button class="delete-item" type="button">Remove from timeline</button></form>`;
     document.body.append(modal);
+    modal.querySelector('[name="price"]').placeholder = `e.g. ${window.wayfareCurrency || '¥'}240`;
     modal.querySelector('.close').onclick = () => modal.remove();
     modal.onclick = event => { if (event.target === modal) modal.remove(); };
     modal.querySelector('.delete-item').onclick = () => { activeItems().splice(index, 1); modal.remove(); api.render(); api.toast('Item removed from timeline'); };

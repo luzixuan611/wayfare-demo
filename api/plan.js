@@ -21,11 +21,12 @@ async function searchOpenPlaces(center) {
   const query = `[out:json][timeout:20];(
     nwr(around:8500,${center.lat},${center.lng})["amenity"="restaurant"]["name"];
     nwr(around:8500,${center.lat},${center.lng})["amenity"="cafe"]["name"];
-    nwr(around:8500,${center.lat},${center.lng})["tourism"~"attraction|museum|gallery|zoo"]["name"];
+    nwr(around:8500,${center.lat},${center.lng})["tourism"~"attraction|museum|gallery|zoo|viewpoint|artwork"]["name"];
+    nwr(around:8500,${center.lat},${center.lng})["amenity"~"arts_centre|theatre"]["name"];
     nwr(around:8500,${center.lat},${center.lng})["historic"]["name"];
     nwr(around:8500,${center.lat},${center.lng})["leisure"="park"]["name"];
     nwr(around:8500,${center.lat},${center.lng})["tourism"~"hotel|guest_house|hostel"]["name"];
-  );out center 60;`;
+  );out center 120;`;
   const response = await fetch(overpassUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain', 'User-Agent': 'WayfareHackathon/1.0 (travel-planning-demo)' }, body: query });
   if (!response.ok) throw new Error('Open place search failed');
   return (await response.json()).elements.map(element => ({
@@ -40,7 +41,7 @@ const detail = place => `${place.tags?.['addr:street'] || 'OpenStreetMap listing
 const item = (time, type, symbol, title, description, price, place) => [time, type, symbol, title, description, price, null, place?.point || null];
 const pointPlace = (name, point) => ({ name, tags: {}, point });
 const popularCityHighlights = {
-  hangzhou: ['West Lake', 'Lingyin Temple', 'Hefang Street', 'China National Tea Museum', 'Leifeng Pagoda', 'Six Harmonies Pagoda', 'Xixi Wetland Park', 'Qinghefang Ancient Street'],
+  hangzhou: ['West Lake', 'Lingyin Temple', 'Zhejiang Museum', 'China Academy of Art Museum', 'Hefang Street', 'China National Tea Museum', 'Leifeng Pagoda', 'Xixi Wetland Park'],
   tokyo: ['Senso-ji Temple', 'Meiji Jingu', 'Shibuya Crossing', 'Ueno Park'],
   kyoto: ['Fushimi Inari Taisha', 'Kiyomizu-dera', 'Arashiyama Bamboo Grove', 'Nishiki Market'],
   shanghai: ['The Bund', 'Yu Garden', 'Tianzifang', 'Shanghai Museum'],
@@ -59,7 +60,7 @@ function fallbackSight(city, center, index) {
 }
 function sightScore(place) {
   const tags = place.tags || {};
-  return (tags.wikipedia ? 8 : 0) + (tags.wikidata ? 6 : 0) + (tags.website ? 3 : 0) + (tags.tourism === 'attraction' ? 5 : 0) + (tags.tourism === 'museum' ? 4 : 0) + (tags.historic ? 3 : 0) + (tags.description ? 1 : 0);
+  return (tags.wikipedia ? 8 : 0) + (tags.wikidata ? 6 : 0) + (tags.website ? 3 : 0) + (tags.tourism === 'attraction' ? 5 : 0) + (tags.tourism === 'museum' ? 5 : 0) + (tags.tourism === 'gallery' ? 5 : 0) + (tags.amenity === 'arts_centre' ? 4 : 0) + (tags.historic ? 3 : 0) + (tags.description ? 1 : 0);
 }
 
 function tripDates(range) {
@@ -115,24 +116,27 @@ export default async function handler(request, response) {
     const center = await geocode(destination);
     const [places, mustResult] = await Promise.all([searchOpenPlaces(center), mustVisit ? geocode(`${mustVisit}, ${destination}`).catch(() => null) : Promise.resolve(null)]);
     const food = byTag(places, tags => tags.amenity === 'restaurant' || tags.amenity === 'cafe');
-    const sights = byTag(places, tags => tags.tourism || tags.leisure === 'park' || tags.historic).sort((a, b) => sightScore(b) - sightScore(a));
+    const sights = byTag(places, tags => ['attraction','museum','gallery','zoo','viewpoint','artwork'].includes(tags.tourism) || tags.leisure === 'park' || tags.historic || ['arts_centre','theatre'].includes(tags.amenity)).sort((a, b) => sightScore(b) - sightScore(a));
     const stays = byTag(places, tags => accommodation === 'hostel' ? tags.tourism === 'hostel' : accommodation === 'homestay' ? tags.tourism === 'guest_house' : tags.tourism === 'hotel');
     const hotel = pick(stays, 0, pick(byTag(places, tags => ['hotel','guest_house','hostel'].includes(tags.tourism)), 0, pointPlace('Stay near city center', center)));
     const city = center.name.split(',')[0];
-    const fallbackSights = Array.from({ length: 8 }, (_, index) => fallbackSight(city, center, index));
-    const sightPool = [...sights, ...fallbackSights].filter((place, index, list) => list.findIndex(other => other.name.toLowerCase() === place.name.toLowerCase()) === index);
     const lunch = pick(food, 0, pointPlace('Local lunch stop', center)); const dinner = pick(food, 1, lunch);
     const required = mustResult ? pointPlace(mustVisit, mustResult) : null;
+    const fallbackSights = Array.from({ length: 8 }, (_, index) => fallbackSight(city, center, index));
+    const sightKey = place => String(place.tags?.wikidata || place.tags?.wikipedia || place.name).toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]/g, '');
+    const requiredKey = required ? sightKey(required) : null;
+    const sightPool = [...sights, ...fallbackSights].filter((place, index, list) => sightKey(place) !== requiredKey && list.findIndex(other => sightKey(other) === sightKey(place)) === index);
     const selectedDates = tripDates(dates);
     const itineraryDates = selectedDates.length ? selectedDates : [new Date()];
     const trips = itineraryDates.map((date, index) => {
       const meta = dayMeta(date, index);
       const offset = travelStyle === 'recharge' ? 1 : 0;
-      const attraction = sightPool[(index + offset) % sightPool.length];
-      const laterAttraction = sightPool[(index + offset + 1) % sightPool.length];
-      const meal = index % 2 ? lunch : dinner;
       const firstDay = index === 0;
       const finalDay = index === itineraryDates.length - 1;
+      const slot = firstDay ? 0 : finalDay ? (itineraryDates.length * 2 - 3) : (index * 2 - 1);
+      const attraction = sightPool[(slot + offset) % sightPool.length];
+      const laterAttraction = sightPool[(slot + offset + 1) % sightPool.length];
+      const meal = index % 2 ? lunch : dinner;
       const title = firstDay
         ? (travelStyle === 'food' ? `A first taste of ${city}` : travelStyle === 'recharge' ? `A gentle arrival in ${city}` : `Welcome to ${city}`)
         : finalDay ? `A final easy day in ${city}`

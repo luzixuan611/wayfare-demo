@@ -26,9 +26,19 @@
     modal.querySelector('.close').onclick = () => modal.remove();
     modal.onclick = event => { if (event.target === modal) modal.remove(); };
     modal.querySelectorAll('.avatar-picker button').forEach(button => button.onclick = () => { avatar = button.textContent; modal.querySelectorAll('.avatar-picker button').forEach(item => item.classList.toggle('picked', item === button)); });
-    modal.querySelector('#copy-invite').onclick = async () => { try { await navigator.clipboard.writeText(location.href + '?join=wayfare'); } catch { /* clipboard can be unavailable in local preview */ } modal.remove(); showToast('Invite link copied'); };
+    modal.querySelector('#copy-invite').onclick = async () => { const invite = new URL(location.href); invite.searchParams.set('join', 'wayfare'); try { await navigator.clipboard.writeText(invite.toString()); } catch { /* clipboard can be unavailable in local preview */ } modal.remove(); showToast('Invite link copied'); };
     modal.querySelector('form').onsubmit = event => { event.preventDefault(); const [name, color] = modal.querySelectorAll('input'); crew.push({ name: name.value.trim(), color: color.value, avatar }); save(); modal.remove(); renderCrew(); showToast(`${name.value.trim()} can now edit this trip`); };
+  }
+  function openJoin() {
+    const modal = document.createElement('div');
+    modal.className = 'crew-modal-backdrop';
+    modal.innerHTML = `<form class="crew-modal"><p class="eyebrow">YOU'RE INVITED</p><h2>Join this travel crew</h2><p>Pick a tiny identity so your edits are easy to spot.</p><label>Your name<input required maxlength="18" placeholder="e.g. Alex" /></label><label>Text color<input class="color-input" type="color" value="#5b71bf" /></label><label>Avatar style<div class="avatar-picker"><button type="button" class="picked">✦</button><button type="button">☼</button><button type="button">◌</button><button type="button">♧</button><button type="button">♥</button></div></label><button class="plan-button" type="submit">Join the trip <span>→</span></button></form>`;
+    document.body.append(modal);
+    let avatar = '✦';
+    modal.querySelectorAll('.avatar-picker button').forEach(button => button.onclick = () => { avatar = button.textContent; modal.querySelectorAll('.avatar-picker button').forEach(item => item.classList.toggle('picked', item === button)); });
+    modal.querySelector('form').onsubmit = event => { event.preventDefault(); const [name, color] = modal.querySelectorAll('input'); const value = name.value.trim(); if (!crew.some(person => person.name === value)) crew.push({ name: value, color: color.value, avatar }); save(); modal.remove(); history.replaceState({}, '', location.pathname); renderCrew(); showToast(`Welcome to the crew, ${value}`); };
   }
   function showToast(message) { const toast = document.querySelector('#toast'); toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2200); }
   renderCrew();
+  if (new URLSearchParams(location.search).get('join') === 'wayfare') setTimeout(openJoin, 350);
 })();
