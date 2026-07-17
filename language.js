@@ -34,6 +34,11 @@
     if (normalized === 'Planning…') return '正在规划…';
     if (normalized === 'Create my timeline') return '生成我的时间线';
     if (normalized === 'Continue') return '继续';
+    if (normalized === 'Must-visit place') return '必去地点';
+    if (normalized === 'Must visit') return '必去地点';
+    if (normalized === 'Must-visit') return '必去地点';
+    if (normalized === 'Priority stop') return '优先地点';
+    if (normalized === 'Priority stop · Open data lookup') return '优先地点 · 开放数据查询';
     if (placeNames[value]) return placeNames[value];
     let match = String(value).match(/^(\d+) Days in (.+)$/); if (match) return `${match[2]} · ${match[1]} 天`;
     match = String(value).match(/^Welcome to (.+)$/); if (match) return `欢迎来到 ${match[1]}`;
