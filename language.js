@@ -12,7 +12,7 @@
     const locale = window.wayfareLocale || 'en'; document.documentElement.lang = locale === 'zh' ? 'zh-CN' : 'en';
     textNodes().forEach(node => { if (!original.has(node)) original.set(node,node.nodeValue); const source=original.get(node); const next=locale === 'zh' ? translate(source) : source; if (node.nodeValue !== next) node.nodeValue=next; });
     document.querySelectorAll('input[placeholder]').forEach(input => { if (!input.dataset.enPlaceholder) input.dataset.enPlaceholder=input.placeholder; input.placeholder=locale === 'zh' ? translate(input.dataset.enPlaceholder) : input.dataset.enPlaceholder; });
-    document.querySelectorAll('[data-language-toggle]').forEach(button => button.textContent=locale === 'zh' ? 'EN' : '中文');
+    document.querySelectorAll('[data-language-toggle]').forEach(button => { const next=locale === 'zh' ? 'EN' : '中文'; if (button.textContent !== next) button.textContent=next; });
   }
   function toggle() { window.wayfareLocale=window.wayfareLocale === 'zh' ? 'en' : 'zh'; localStorage.setItem('wayfare-locale',window.wayfareLocale); apply(); }
   window.wayfareLocale=localStorage.getItem('wayfare-locale') || 'en'; document.querySelectorAll('[data-language-toggle]').forEach(button => button.onclick=toggle); new MutationObserver(() => { if (window.wayfareLocale === 'zh') apply(); }).observe(document.body,{childList:true,subtree:true}); apply();
