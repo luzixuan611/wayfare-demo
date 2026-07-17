@@ -2,7 +2,7 @@
 
 > A collaborative travel copilot that turns a destination, dates, budget, and travel mood into an editable day-by-day itinerary.
 
-**Live demo:** _Add the Vercel Production URL here before submitting._  
+**Live demo:** [wayfare-demo.vercel.app](https://wayfare-demo.vercel.app/)  
 **Demo category:** Apps for Your Life
 
 ## Why Wayfare?
@@ -36,11 +36,15 @@ Travel planning is scattered across map tabs, booking sites, saved posts, and gr
 
 ## Screenshots and demo visuals
 
-Before submitting, add **two or three screenshots** to the Devpost project page (and optionally embed them here):
+The following screenshots show the main product flow:
 
-1. The calm onboarding screen where a traveler chooses destination, dates, budget, and travel mood.
-2. A generated timeline with a map, recommendations, and booking/on-trip budgets visible.
-3. The group-planning view with avatars, color-coded edits, restaurant voting, or an over-budget reminder.
+![Wayfare onboarding in English](screenshots/01-onboarding-en.png)
+
+![Generated timeline with map, recommendations, and budgets](screenshots/02-timeline-desktop.png)
+
+![Travel crew, voting, and checklist tools](screenshots/03-collaboration-tools.png)
+
+![Wayfare mobile onboarding in Chinese](screenshots/04-mobile-zh.png)
 
 Screenshots are not required to run the project, but they make the product understandable before a judge presses play on the demo video.
 
@@ -125,7 +129,7 @@ The final product decisions—such as making budgets flexible, treating arrival 
 
 ## Submission checklist
 
-- [ ] Replace the live-demo placeholder above with the Vercel Production URL.
+- [x] Add the Vercel Production URL above.
 - [ ] Add the public GitHub repository URL to Devpost (or grant Devpost testing access if the repository stays private).
 - [ ] Record a public YouTube demo video under three minutes, including how Codex and GPT-5.6 were used.
 - [ ] Add the Codex `/feedback` Session ID required by the submission form.
