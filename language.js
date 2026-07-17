@@ -32,6 +32,8 @@
     if (normalized === 'Your dates fall in a popular travel period — flights and hotels may cost more, so booking early is a smart move.') return '你的出行日期处于热门旅行时段，机票和酒店可能更贵，建议尽早预订。';
     if (normalized === 'Build my trip') return '生成我的行程';
     if (normalized === 'Planning…') return '正在规划…';
+    if (normalized === 'Create my timeline') return '生成我的时间线';
+    if (normalized === 'Continue') return '继续';
     if (placeNames[value]) return placeNames[value];
     let match = String(value).match(/^(\d+) Days in (.+)$/); if (match) return `${match[2]} · ${match[1]} 天`;
     match = String(value).match(/^Welcome to (.+)$/); if (match) return `欢迎来到 ${match[1]}`;
@@ -94,7 +96,8 @@
     const sentences = {'Set actual cost':'填写实际花费','Open listing':'查看地点','Flexible':'弹性安排','Near your stay.':'住宿附近。','Check in to your stay':'入住住宿','Add your confirmed hotel, homestay, or hostel here.':'在这里添加已确认的酒店、民宿或青旅。','A relaxed final meal before checkout.':'退房前轻松吃最后一餐。','A final meal near your stay.':'住宿附近的最后一餐。','A casual first stop near your stay.':'抵达后在住宿附近轻松停留。','A well-reviewed option near your stay.':'住宿附近评价不错的选择。','A short, easy stop before departure.':'出发前轻松短暂停留。','Allow extra time for luggage, traffic, and the airport or station.':'为行李、交通以及机场或车站预留充足时间。','Allow extra time for luggage and traffic.':'为行李和交通预留充足时间。'};
     if (sentences[value]) return sentences[value];
     const prefixes = {'Breakfast:':'早餐：','Lunch:':'午餐：','Afternoon tea:':'下午茶：','Dinner:':'晚餐：','Welcome bite:':'抵达第一口：','Slow café:':'慢享咖啡：','Last local bite:':'最后一口当地风味：','A quiet pause:':'安静休息：','Check in:':'入住：','Check out:':'退房：','Must-visit:':'必去：','Open listing':'查看地点'};
-    for (const [from,to] of Object.entries(prefixes)) if (String(value).startsWith(from)) { const rest=String(value).slice(from.length).trim(); return `${to}${placeNames[rest]||rest}`; }
+    for (const [from,to] of Object.entries(prefixes)) if (String(value).toLowerCase().startsWith(from.toLowerCase())) { const rest=String(value).slice(from.length).trim(); return `${to}${translate(rest)}`; }
+    match = String(value).match(/^Slow breakfast:\s*(.+)$/i); if (match) return `慢享早餐：${translate(match[1])}`;
     return String(value).replace(/^(\d+) travelers$/, '$1 位旅行者').replace(/^(.+) in little moments$/, '$1 的城市瞬间');
   };
   function textNodes(root = document.body) {
