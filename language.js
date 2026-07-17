@@ -29,6 +29,9 @@
     if (normalized === 'A culture and sights escape') return '文化与观光之旅';
     if (normalized === 'A slow, restorative escape') return '慢节奏疗愈之旅';
     if (normalized === 'We’re putting together your travel rhythm.') return '我们正在为你安排旅行节奏。';
+    if (normalized === 'Your dates fall in a popular travel period — flights and hotels may cost more, so booking early is a smart move.') return '你的出行日期处于热门旅行时段，机票和酒店可能更贵，建议尽早预订。';
+    if (normalized === 'Build my trip') return '生成我的行程';
+    if (normalized === 'Planning…') return '正在规划…';
     if (placeNames[value]) return placeNames[value];
     let match = String(value).match(/^(\d+) Days in (.+)$/); if (match) return `${match[2]} · ${match[1]} 天`;
     match = String(value).match(/^Welcome to (.+)$/); if (match) return `欢迎来到 ${match[1]}`;
@@ -79,6 +82,10 @@
     match = String(value).match(/^Dinner near (.+)$/); if (match) return `在 ${match[1]} 附近吃晚餐`;
     match = String(value).match(/^Lunch near (.+)$/); if (match) return `在 ${match[1]} 附近吃午餐`;
     match = String(value).match(/^Breakfast near (.+)$/); if (match) return `在 ${match[1]} 附近吃早餐`;
+    match = String(value).match(/^Dinner nearby$/i); if (match) return '附近晚餐';
+    match = String(value).match(/^Lunch nearby$/i); if (match) return '附近午餐';
+    match = String(value).match(/^Breakfast nearby$/i); if (match) return '附近早餐';
+    match = String(value).match(/^Leave for your next stop$/i); if (match) return '出发前往下一站';
     match = String(value).match(/^Metro or bus to (.+)$/); if (match) return `乘坐地铁或公交前往 ${match[1]}`;
     match = String(value).match(/^Another popular stop to round out your day in (.+)\.$/); if (match) return `在 ${match[1]} 的另一个热门地点结束这一天。`;
     match = String(value).match(/^A final stop at one of (.+)'s popular sights\.$/); if (match) return `${match[1]} 的热门景点收尾。`;
