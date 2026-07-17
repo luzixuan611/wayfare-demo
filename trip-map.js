@@ -30,7 +30,9 @@
       mapNode.innerHTML='';
       map = L.map(mapNode,{zoomControl:false,attributionControl:true,preferCanvas:true}).setView(center, dayStops.length ? 13 : 11);
       L.control.zoom({position:'bottomright'}).addTo(map);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,updateWhenIdle:true,keepBuffer:2,attribution:'© OpenStreetMap contributors'}).addTo(map);
+      // Use a single, consistent light basemap so slow/missing OSM subdomain tiles
+      // do not leave large blank columns in the route preview.
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:18,updateWhenIdle:true,updateWhenZooming:false,keepBuffer:4,attribution:'© OpenStreetMap contributors © CARTO'}).addTo(map);
       if (!dayStops.length) { L.marker(center).addTo(map).bindPopup('City center preview').openPopup(); state.textContent='City preview'; lastSignature=nextSignature; return; }
       const points = dayStops.map((stop,index) => { const point=[Number(stop.point.lat),Number(stop.point.lng)]; L.marker(point,{icon:L.divIcon({className:'route-pin',html:`<span>${index+1}</span>`,iconSize:[25,25],iconAnchor:[12,12]})}).addTo(map).bindPopup(stop.title); return point; });
       if (points.length>1) map.fitBounds(L.latLngBounds(points),{padding:[32,32],maxZoom:14});
