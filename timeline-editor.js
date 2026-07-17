@@ -8,10 +8,10 @@
 
   function renderSummary() {
     document.querySelector('.daily-spend')?.remove();
-    const total = activeItems().reduce((sum, entry) => sum + money(entry[5]), 0);
+    const total = activeItems().filter(entry => ['food', 'sight'].includes(entry[1])).reduce((sum, entry) => sum + money(entry[5]), 0);
     const summary = document.createElement('div');
     summary.className = 'daily-spend';
-    summary.innerHTML = `<span>DAY ${String(api.activeDay + 1).padStart(2, '0')} SPEND</span><b>${window.wayfareCurrency || '¥'}${total.toLocaleString()}</b><small>Based on the costs you entered</small>`;
+    summary.innerHTML = `<span>DAY ${String(api.activeDay + 1).padStart(2, '0')} ON-TRIP SPEND</span><b>${window.wayfareCurrency || '¥'}${total.toLocaleString()}</b><small>Food and experiences you logged today</small>`;
     timeline.insertAdjacentElement('afterend', summary);
   }
   function enhance() {
