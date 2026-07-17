@@ -3,6 +3,8 @@
 > A collaborative travel copilot that turns a destination, dates, budget, and travel mood into an editable day-by-day itinerary.
 
 **Live demo:** [wayfare-demo.vercel.app](https://wayfare-demo.vercel.app/)  
+**Demo video:** [Watch the Wayfare walkthrough](https://youtu.be/R2J9IdQvpRo)  
+**Source code:** [github.com/luzixuan611/wayfare-demo](https://github.com/luzixuan611/wayfare-demo)  
 **Demo category:** Apps for Your Life
 
 ## Why Wayfare?
@@ -130,6 +132,6 @@ The final product decisions—such as making budgets flexible, treating arrival 
 ## Submission checklist
 
 - [x] Add the Vercel Production URL above.
-- [ ] Add the public GitHub repository URL to Devpost (or grant Devpost testing access if the repository stays private).
-- [ ] Record a public YouTube demo video under three minutes, including how Codex and GPT-5.6 were used.
+- [x] Make the GitHub repository public and add its URL to Devpost.
+- [x] Record and publish a public YouTube demo video under three minutes, including how Codex and GPT-5.6 were used.
 - [ ] Add the Codex `/feedback` Session ID required by the submission form.
