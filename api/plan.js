@@ -126,12 +126,15 @@ export default async function handler(request, response) {
     const stays = byTag(places, tags => accommodation === 'hostel' ? tags.tourism === 'hostel' : accommodation === 'homestay' ? tags.tourism === 'guest_house' : tags.tourism === 'hotel');
     const hotel = pick(stays, 0, pick(byTag(places, tags => ['hotel','guest_house','hostel'].includes(tags.tourism)), 0, pointPlace('Stay near city center', center)));
     const city = center.name.split(',')[0];
-    const lunch = pick(food, 0, pointPlace('Local lunch stop', center)); const dinner = pick(food, 1, lunch);
     const required = mustResult ? pointPlace(mustVisit, mustResult) : null;
     const fallbackSights = Array.from({ length: 8 }, (_, index) => fallbackSight(city, center, index));
     const sightKey = place => String(place.tags?.wikidata || place.tags?.wikipedia || place.name).toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]/g, '');
     const requiredKey = required ? sightKey(required) : null;
     const sightPool = [...sights, ...fallbackSights].filter((place, index, list) => sightKey(place) !== requiredKey && list.findIndex(other => sightKey(other) === sightKey(place)) === index);
+    const nearStay = list => [...list].sort((a, b) => distanceKm(hotel.point, a.point) - distanceKm(hotel.point, b.point));
+    const nearbyFood = nearStay(food.length ? food : [pointPlace('Local food near your stay', center)]);
+    const nearbySights = nearStay(sightPool);
+    const mealAt = index => nearbyFood[index % nearbyFood.length];
     const selectedDates = tripDates(dates);
     const itineraryDates = selectedDates.length ? selectedDates : [new Date()];
     const trips = itineraryDates.map((date, index) => {
@@ -140,9 +143,8 @@ export default async function handler(request, response) {
       const firstDay = index === 0;
       const finalDay = index === itineraryDates.length - 1;
       const slot = firstDay ? 0 : finalDay ? (itineraryDates.length * 2 - 3) : (index * 2 - 1);
-      const attraction = sightPool[(slot + offset) % sightPool.length];
-      const laterAttraction = sightPool[(slot + offset + 1) % sightPool.length];
-      const meal = index % 2 ? lunch : dinner;
+      const attraction = (travelStyle === 'recharge' ? nearbySights : sightPool)[(slot + offset) % sightPool.length];
+      const laterAttraction = (travelStyle === 'recharge' ? nearbySights : sightPool)[(slot + offset + 1) % sightPool.length];
       const title = firstDay
         ? (travelStyle === 'food' ? `A first taste of ${city}` : travelStyle === 'recharge' ? `A gentle arrival in ${city}` : `Welcome to ${city}`)
         : finalDay ? `A final easy day in ${city}`
@@ -150,20 +152,29 @@ export default async function handler(request, response) {
       const items = firstDay ? [
         item('15:00', 'stay', '⌂', `Check in: ${hotel.name}`, `${detail(hotel)} · ${accommodation}`, 'Set actual cost', hotel),
         ...(required ? [item('17:00', 'sight', '★', `Must-visit: ${required.name}`, 'Priority stop · Open data lookup', 'Priority stop', required)] : []),
-        item(required ? '19:00' : '17:30', 'sight', '◉', attraction.name, detail(attraction), 'Open listing', attraction),
-        item('20:30', 'food', '♨', `Dinner: ${meal.name}`, detail(meal), 'Set actual cost', meal)
+        ...(travelStyle === 'food' ? [item(required ? '18:30' : '17:30', 'food', '☕', `Welcome bite: ${mealAt(index).name}`, `${detail(mealAt(index))} · Chosen near your stay`, 'Set actual cost', mealAt(index)), item('20:30', 'food', '♨', `Dinner: ${mealAt(index + 1).name}`, `${detail(mealAt(index + 1))} · Chosen near your stay`, 'Set actual cost', mealAt(index + 1))] : travelStyle === 'recharge' ? [item(required ? '18:30' : '17:30', 'food', '☕', `Slow café: ${mealAt(index).name}`, `${detail(mealAt(index))} · A gentle stop near your stay`, 'Set actual cost', mealAt(index))] : [item(required ? '19:00' : '17:30', 'sight', '◉', attraction.name, detail(attraction), 'Open listing', attraction), item('20:30', 'food', '♨', `Dinner: ${mealAt(index).name}`, `${detail(mealAt(index))} · Chosen near your stay`, 'Set actual cost', mealAt(index))])
       ] : finalDay ? [
-        item('09:30', 'food', '♨', `Breakfast: ${meal.name}`, detail(meal), 'Set actual cost', meal),
-        item('11:00', 'sight', '◉', attraction.name, detail(attraction), 'Open listing', attraction),
+        item('09:30', 'food', '☕', `Breakfast: ${mealAt(index).name}`, `${detail(mealAt(index))} · Chosen near your stay`, 'Set actual cost', mealAt(index)),
+        ...(travelStyle === 'food' ? [item('11:30', 'food', '♨', `Last local bite: ${mealAt(index + 1).name}`, detail(mealAt(index + 1)), 'Set actual cost', mealAt(index + 1))] : travelStyle === 'recharge' ? [item('11:00', 'sight', '◉', attraction.name, `${detail(attraction)} · A short, easy stop near your stay`, 'Open listing', attraction)] : [item('11:00', 'sight', '◉', attraction.name, detail(attraction), 'Open listing', attraction)]),
         item('14:00', 'transport', '↔', 'Leave for your next stop', 'Allow extra time for luggage, traffic, and the airport or station.', '30–60 min')
+      ] : travelStyle === 'food' ? [
+        item('09:30', 'food', '☕', `Breakfast: ${mealAt(index).name}`, `${detail(mealAt(index))} · Chosen near your stay`, 'Set actual cost', mealAt(index)),
+        item('12:30', 'food', '♨', `Lunch: ${mealAt(index + 1).name}`, `${detail(mealAt(index + 1))} · Chosen near your stay`, 'Set actual cost', mealAt(index + 1)),
+        item('15:30', 'food', '☕', `Afternoon tea: ${mealAt(index + 2).name}`, `${detail(mealAt(index + 2))} · Chosen near your stay`, 'Set actual cost', mealAt(index + 2)),
+        item('19:00', 'food', '♨', `Dinner: ${mealAt(index + 3).name}`, `${detail(mealAt(index + 3))} · Chosen near your stay`, 'Set actual cost', mealAt(index + 3))
+      ] : travelStyle === 'recharge' ? [
+        item('10:00', 'food', '☕', `Slow breakfast: ${mealAt(index).name}`, `${detail(mealAt(index))} · Chosen near your stay`, 'Set actual cost', mealAt(index)),
+        item('12:30', 'sight', '◉', attraction.name, `${detail(attraction)} · A low-pressure nearby stop`, 'Open listing', attraction),
+        item('15:30', 'food', '☕', `A quiet pause: ${mealAt(index + 1).name}`, `${detail(mealAt(index + 1))} · Chosen near your stay`, 'Set actual cost', mealAt(index + 1))
       ] : [
         item('10:00', 'sight', '◉', attraction.name, detail(attraction), 'Open listing', attraction),
-        item('13:00', 'food', '♨', `Lunch: ${meal.name}`, detail(meal), 'Set actual cost', meal),
-        item('16:00', 'sight', '◉', laterAttraction.name, `${detail(laterAttraction)} · A popular local highlight to consider.`, 'Open listing', laterAttraction)
+        item('12:30', 'food', '♨', `Lunch: ${mealAt(index).name}`, `${detail(mealAt(index))} · Chosen near your stay`, 'Set actual cost', mealAt(index)),
+        item('14:30', 'sight', '◉', laterAttraction.name, `${detail(laterAttraction)} · A popular local highlight to consider.`, 'Open listing', laterAttraction),
+        item('18:30', 'food', '♨', `Dinner: ${mealAt(index + 1).name}`, `${detail(mealAt(index + 1))} · Chosen near your stay`, 'Set actual cost', mealAt(index + 1))
       ];
       return { ...meta, title, weather: '✦ Explore', items: addTravelLegs(items) };
     });
-    const recommendationPlaces = [...food.slice(0, 2), ...sights.slice(0, 3), ...sightPool].filter((place, index, list) => list.findIndex(other => other.name === place.name) === index).slice(0, 3);
+    const recommendationPlaces = [...nearbyFood.slice(0, 5), ...nearbySights.slice(0, 3)].filter((place, index, list) => list.findIndex(other => other.name === place.name) === index).slice(0, 5);
     const recommendations = recommendationPlaces.map((place, index) => [place.tags?.amenity ? '🍜' : '🌿', place.name, place.tags?.['addr:street'] || city, 'OpenStreetMap listing']);
     return response.status(200).json({ city, dates, travelers, accommodation, source: 'open', estimate: budget ? `¥${budget}` : null, trips, recommendations, priceAlert });
   } catch {
