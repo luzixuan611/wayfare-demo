@@ -3,7 +3,25 @@
   const zh = {
     'A MORE THOUGHTFUL WAY TO TRAVEL':'更贴心的旅行方式','Where would you':'你想','love to go?':'去哪里？','We’ll shape the details around your kind of escape.':'我们会依照你的旅行方式，安排每一个细节。','Destination':'目的地','When are you travelling?':'出行日期','Anything you absolutely want to see?':'有没有一定要去的地方？','optional':'选填','Continue':'继续','What kind of trip':'这趟旅行，','are you craving?':'你最想要什么？','Your answer helps us decide how to spend your most valuable hours.':'你的选择会帮助我们安排最值得花时间的体验。','Food first':'美食优先','Local classics, markets, and memorable tables':'当地经典、市集与值得记住的一餐','Sightseeing':'观光探索','Landmarks, culture, and unmissable views':'地标、文化与不容错过的风景','Recharge':'放松疗愈','Slow mornings, nature, and room to breathe':'慢节奏早晨、自然与留白','← Back':'← 返回','Your trip is':'你的旅程','taking shape.':'正在成形。','Your destination':'你的目的地','Tailored to you':'为你量身打造','Create my timeline':'生成我的时间线','YOUR TRAVEL COPILOT':'你的旅行助手','Turn anywhere you want to go':'把任何想去的地方','into a trip you can live.':'变成真正能出发的旅程。','Share your destination, dates, and budget. We connect flights, stays, standout food, and the city’s most memorable corners into one thoughtful plan.':'告诉我们目的地、日期和预算；我们会把交通、住宿、美食与城市亮点整理成一份行程。','Where to?':'去哪里？','Travel dates':'旅行日期','Total budget':'总预算','Must-visit place':'必去地点','Build my trip':'生成行程','YOUR ITINERARY':'你的行程','↗ Share':'↗ 分享','♡ Save trip':'♡ 保存行程','Trip budget':'旅行预算','Transport':'交通','Stays':'住宿','Experiences':'体验','Picked for you':'为你挑选','Inspired by travel guides and recent reviews':'参考旅行攻略和近期评价','Bookings':'预订','Choose what you need, then add the confirmed details back to your plan.':'选择需要的预订，确认后再写回行程。','✈ Flights':'✈ 机票','🚆 Trains':'🚆 火车票','⌂ Stays':'⌂ 住宿','+ Stay':'+ 添加住宿','+ Transport':'+ 添加交通','Booking opens in a new tab.':'将在新页面打开预订。','Trip tools':'旅行工具','Optional helpers for your group.':'需要时再打开的同行小工具。','Group picks':'同行投票','Vote on today’s stops':'给今天的地点投票','Travel checklist':'旅行清单','Keep the essentials together':'把出行必备事项放在一起','ADD TO TIMELINE':'添加到时间线','Add a new plan':'新增行程','Added by':'添加人','Activity icon':'活动图标','Time':'时间','Plan name':'活动名称','Place':'地点','Add to timeline':'添加到时间线','Check reviews ↗':'查看评价 ↗','Open live transit route ↗':'打开实时公交路线 ↗','LOCAL MOODBOARD':'本地灵感册','Landscape':'风景','Culture':'文化','Taste':'美食','Fresh visual inspiration for your itinerary.':'为你的行程带来新鲜灵感。'
   };
-  const translate = value => zh[value] || value.replace(/^(\d+) Days in (.+)$/, '$2 · $1 天').replace(/^(\d+) travelers$/, '$1 位旅行者').replace(/^(.+) in little moments$/, '$1 的城市瞬间');
+  const translate = value => {
+    if (zh[value]) return zh[value];
+    let match = String(value).match(/^(\d+) Days in (.+)$/); if (match) return `${match[2]} · ${match[1]} 天`;
+    match = String(value).match(/^Welcome to (.+)$/); if (match) return `欢迎来到 ${match[1]}`;
+    match = String(value).match(/^A first taste of (.+)$/); if (match) return `${match[1]} · 初尝当地风味`;
+    match = String(value).match(/^A gentle arrival in (.+)$/); if (match) return `${match[1]} · 轻松抵达`;
+    match = String(value).match(/^A final easy day in (.+)$/); if (match) return `${match[1]} · 轻松收尾的一天`;
+    match = String(value).match(/^A food-first day in (.+)$/); if (match) return `${match[1]} · 美食优先的一天`;
+    match = String(value).match(/^Eat your way through (.+)$/); if (match) return `在 ${match[1]} 开启美食之旅`;
+    match = String(value).match(/^A slower day in (.+)$/); if (match) return `${match[1]} · 慢节奏的一天`;
+    match = String(value).match(/^A slower day in (.+)$/); if (match) return `${match[1]} · 慢节奏的一天`;
+    match = String(value).match(/^A gentle arrival in (.+)$/); if (match) return `${match[1]} · 轻松抵达`;
+    match = String(value).match(/^(.+), at your own pace$/); if (match) return `${match[1]} · 按自己的节奏探索`;
+    match = String(value).match(/^Discover (.+) at your own pace$/); if (match) return `按自己的节奏探索 ${match[1]}`;
+    match = String(value).match(/^A popular (.+) highlight selected for your itinerary\.$/); if (match) return `为你的行程挑选的热门${match[1]}景点。`;
+    const prefixes = {'Breakfast:':'早餐：','Lunch:':'午餐：','Afternoon tea:':'下午茶：','Dinner:':'晚餐：','Welcome bite:':'抵达第一口：','Slow café:':'慢享咖啡：','Last local bite:':'最后一口当地风味：','A quiet pause:':'安静休息：','Check in:':'入住：','Check out:':'退房：','Must-visit:':'必去：','Open listing':'查看地点'};
+    for (const [from,to] of Object.entries(prefixes)) if (String(value).startsWith(from)) return `${to}${String(value).slice(from.length)}`;
+    return String(value).replace(/^(\d+) travelers$/, '$1 位旅行者').replace(/^(.+) in little moments$/, '$1 的城市瞬间');
+  };
   function textNodes(root = document.body) {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: node => node.parentElement && !['SCRIPT','STYLE'].includes(node.parentElement.tagName) && node.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT });
     const nodes=[]; while(walker.nextNode()) nodes.push(walker.currentNode); return nodes;
