@@ -1,15 +1,102 @@
 # Wayfare
 
-## Open travel recommendations
+> A collaborative travel copilot that turns a destination, dates, budget, and travel mood into an editable day-by-day itinerary.
 
-Deploy this folder to Vercel. The **Build my trip** button calls `/api/plan`, which uses Nominatim and Overpass/OpenStreetMap to find a city center, restaurants, attractions, parks, and accommodation. It needs no API key or payment method. Use **Must-visit place** to lock a user-supplied location into Day 1 as a priority stop.
+**Live demo:** _Add the Vercel Production URL here before submitting._  
+**Demo category:** Apps for Your Life
 
-This is suitable for a low-volume hackathon demo. Public OpenStreetMap services are shared infrastructure: keep requests small, cache results, and replace them with a managed provider or self-hosted instance before scaling.
+## Why Wayfare?
 
-## Interactive map
+Travel planning is scattered across map tabs, booking sites, saved posts, and group chats. Wayfare brings the planning conversation into one calm, visual timeline: travelers can start with a few preferences, discover open-map places, account for confirmed transport and stays, and make the plan their own together.
 
-The map uses Leaflet and OpenStreetMap tiles, so it does not need a Google Maps API key or a billing account. It is intentionally a lightweight route preview. Upgrade later if you need live traffic, precise transit directions, and ETA.
+## What it does
 
-## Add flights and live hotel prices
+- Builds a multi-day itinerary from destination, dates, group size, budget, stay type, must-visit place, and trip style.
+- Supports **Food first**, **Sightseeing**, and **Recharge** travel rhythms.
+- Finds restaurants, cafés, cultural sites, parks, and stays using open geographic data—no paid Maps API or card required.
+- Prioritizes a must-visit stop and avoids repeating itinerary highlights where possible.
+- Adds map-aware local travel suggestions and a lightweight OpenStreetMap route view.
+- Lets travelers record confirmed hotel, flight, or train details; arrival/departure times automatically reshape the first and last day.
+- Separates booking budget from in-trip spending and provides a gentle over-budget indicator rather than blocking choices.
+- Includes editable timeline items, activity icons, avatars/color-coded contributors, restaurant voting, packing checklist, bilingual English/Chinese UI, and a mobile-friendly layout.
 
-Create an Amadeus for Developers account and add `AMADEUS_CLIENT_ID` and `AMADEUS_CLIENT_SECRET` as Vercel environment variables. Use their Flight Offers Search API for flight options and Hotel List + Hotel Search for pricing. Keep those requests in `api/plan.js`; do not call them from `app.js`.
+## A quick demo flow
+
+1. Choose a destination, departure/return dates, travel style, group size, budgets, currency, and accommodation preference.
+2. Add one non-negotiable place such as `West Lake`.
+3. Build the trip and browse the generated daily timeline, recommendations, and map.
+4. Use **+ Transport** to enter a confirmed arrival or departure ticket. The relevant day adjusts around the actual time.
+5. Use **+ Stay** to add the booked hotel. Check-in and check-out stay compatible with confirmed transport.
+6. Edit an event, add a friend avatar, vote between restaurant options, or track actual costs.
+
+## Tech stack
+
+- Vanilla HTML, CSS, and JavaScript
+- Vercel Serverless Functions
+- OpenStreetMap, Nominatim, and Overpass API for open place data
+- Leaflet for the lightweight map preview
+- Browser `localStorage` for the prototype’s local editing, voting, and checklist state
+
+## Architecture
+
+```text
+Browser UI
+  ├─ onboarding + preferences
+  ├─ editable timeline + budgets + group tools
+  └─ Leaflet/OpenStreetMap map preview
+          │
+          ▼
+Vercel /api/plan
+  ├─ Nominatim: geocode destination / must-visit place
+  └─ Overpass: restaurants, cafés, sights, parks, and stays
+```
+
+## Run locally
+
+This is a dependency-light prototype.
+
+1. Clone the repository.
+2. Serve the project folder with any static-file server and open `index.html`.
+3. To test itinerary generation, deploy to Vercel (the `/api/plan` endpoint is a Vercel serverless function).
+
+### Deploy to Vercel
+
+1. Import this GitHub repository into Vercel.
+2. Keep the root directory as `./` and the preset as **Other**.
+3. Deploy. No environment variables are required for the current open-data prototype.
+
+`vercel.json` sets the itinerary API timeout to 10 seconds. The API also uses short request timeouts and the browser gracefully falls back to a location-aware demo itinerary if public map data is temporarily unavailable.
+
+## Data and privacy notes
+
+Wayfare’s current recommendations use shared public OpenStreetMap services, so this version is intended for a low-volume hackathon demo rather than production-scale traffic. Live fares, hotel availability, traffic, and review scores are deliberately linked out to booking/review partners instead of being represented as live data inside the app.
+
+The collaboration experience is currently a **local demo**: avatars, edits, votes, and lists persist in the current browser. A production version would use Supabase or Firebase for real-time rooms, authentication, and cross-device sync.
+
+## How Codex and GPT-5.6 accelerated the build
+
+Wayfare was built iteratively with Codex and GPT-5.6 as a product and engineering collaborator. They helped:
+
+- translate a broad travel-planning concept into a focused hackathon scope and feature roadmap;
+- design the onboarding flow, timeline interaction model, mobile layout, and bilingual interface;
+- implement the Vercel API integration with Nominatim/Overpass and resilient fallback behavior;
+- connect booking, hotel, budget, transport-time, map, voting, and checklist interactions into one coherent prototype;
+- diagnose UI issues such as stale destination defaults, slow map requests, date/time conflicts, and budget-state feedback;
+- turn continuous user testing feedback into small, shippable improvements.
+
+The final product decisions—such as making budgets flexible, treating arrival and departure as timeline constraints, and keeping data sources open for a no-card demo—were made during that iterative collaboration.
+
+## Future work
+
+- Real-time shared trip rooms with Supabase/Firebase
+- Live flight and hotel pricing through a managed provider such as Amadeus
+- Better routing, traffic, and transit data
+- Curated review/ranking providers with transparent source attribution
+- Availability-aware booking handoff and alerts
+
+## Submission checklist
+
+- [ ] Replace the live-demo placeholder above with the Vercel Production URL.
+- [ ] Add the public GitHub repository URL to Devpost (or grant Devpost testing access if the repository stays private).
+- [ ] Record a public YouTube demo video under three minutes, including how Codex and GPT-5.6 were used.
+- [ ] Add the Codex `/feedback` Session ID required by the submission form.
