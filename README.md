@@ -134,4 +134,4 @@ The final product decisions—such as making budgets flexible, treating arrival 
 - [x] Add the Vercel Production URL above.
 - [x] Make the GitHub repository public and add its URL to Devpost.
 - [x] Record and publish a public YouTube demo video under three minutes, including how Codex and GPT-5.6 were used.
-- [ ] Add the Codex `/feedback` Session ID required by the submission form.
+- [x] Submit the Codex `/feedback` Session ID through the Devpost submission form.
