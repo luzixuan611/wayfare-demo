@@ -39,6 +39,28 @@
     if (normalized === 'Must-visit') return '必去地点';
     if (normalized === 'Priority stop') return '优先地点';
     if (normalized === 'Priority stop · Open data lookup') return '优先地点 · 开放数据查询';
+    if (normalized === 'CONFIRM YOUR STAY') return '确认住宿';
+    if (normalized === 'Add your booked place') return '添加已预订住宿';
+    if (normalized === 'After booking elsewhere, save the final accommodation and cost to day one.') return '在其他平台预订后，把最终住宿和费用保存到第一天。';
+    if (normalized === 'Choose who added this booking. Check-in and check-out will stay compatible with any confirmed transport times.') return '选择由谁添加这项预订。入住和退房时间会与已确认的交通时间保持兼容。';
+    if (normalized === 'Hotel, homestay, or hostel') return '酒店、民宿或青旅';
+    if (normalized === 'Area or booking note') return '区域或预订备注';
+    if (normalized === 'Total cost') return '总费用';
+    if (normalized === 'CONFIRM TRANSPORT') return '确认交通';
+    if (normalized === 'Add your ticket') return '添加车票/机票';
+    if (normalized === 'Your route is filled in from the trip details — edit it only if needed. We’ll reshape the first or last day around these times.') return '路线已根据旅行信息填写，如有需要可以修改。我们会根据这些时间调整第一天或最后一天。';
+    if (normalized === 'Ticket type') return '票种';
+    if (normalized === 'When is this journey?') return '这段行程是什么时候？';
+    if (normalized === 'Arrival day') return '抵达日';
+    if (normalized === 'Departure day') return '离开日';
+    if (normalized === 'Route') return '路线';
+    if (normalized === 'Depart') return '出发';
+    if (normalized === 'Arrive') return '抵达';
+    if (normalized === 'Ticket cost') return '票价';
+    if (normalized === 'Add & update timeline') return '添加并更新行程';
+    if (normalized === 'Flight') return '航班';
+    if (normalized === 'Train') return '火车';
+    if (normalized === 'Add to timeline') return '添加到时间线';
     if (placeNames[value]) return placeNames[value];
     let match = String(value).match(/^(\d+) Days in (.+)$/); if (match) return `${match[2]} · ${match[1]} 天`;
     match = String(value).match(/^Welcome to (.+)$/); if (match) return `欢迎来到 ${match[1]}`;
@@ -54,6 +76,8 @@
     match = String(value).match(/^Discover (.+) at your own pace$/); if (match) return `按自己的节奏探索 ${match[1]}`;
     match = String(value).match(/^A popular (.+) highlight selected for your itinerary\.$/); if (match) return `为你的行程挑选的热门${match[1]}景点。`;
     match = String(value).match(/^(Transport|Stays) ([¥$][\d,]+)$/); if (match) return `${match[1] === 'Transport' ? '交通' : '住宿'} ${match[2]}`;
+    match = String(value).match(/^(Arrive|Depart) by (Flight|Train):\s*(.+)$/i); if (match) return `${match[1].toLowerCase() === 'arrive' ? '乘坐' : '搭乘'}${match[2].toLowerCase() === 'flight' ? '航班' : '火车'}：${match[3]}`;
+    match = String(value).match(/^Confirmed ticket · (.+)$/i); if (match) return `已确认票务 · ${match[1]}`;
     match = String(value).match(/^([¥$][\d,]+) above your flexible booking budget\.$/); if (match) return `${match[1]} 超过弹性机酒预算。`;
     match = String(value).match(/^([¥$][\d,]+) left in your booking budget\.$/); if (match) return `机酒预算还剩 ${match[1]}。`;
     match = String(value).match(/^([¥$][\d,]+) left for food and experiences\.$/); if (match) return `餐饮和体验还剩 ${match[1]}。`;
@@ -84,6 +108,7 @@
     match = String(value).match(/^(.+) · A low-pressure nearby stop$/); if (match) return `${match[1]} · 附近轻松无压力的停留点`;
     match = String(value).match(/^(.+) · A gentle stop near your stay$/); if (match) return `${match[1]} · 住宿附近的轻松停留`;
     match = String(value).match(/^(.+) · A signature (.+) highlight\.$/); if (match) return `${match[1]} · ${match[2]}的代表性景点。`;
+    match = String(value).match(/^(Flight|Train) added — your (arrival|departure) day was updated$/i); if (match) return `${match[1].toLowerCase() === 'flight' ? '航班' : '火车'}已添加——你的${match[2].toLowerCase() === 'arrival' ? '抵达' : '离开'}日已更新`;
     match = String(value).match(/^Explore (.+)$/); if (match) return `探索 ${match[1]}`;
     match = String(value).match(/^First walk around (.+)$/); if (match) return `在 ${match[1]} 初次漫步`;
     match = String(value).match(/^Dinner near (.+)$/); if (match) return `在 ${match[1]} 附近吃晚餐`;
@@ -98,7 +123,7 @@
     match = String(value).match(/^A final stop at one of (.+)'s popular sights\.$/); if (match) return `${match[1]} 的热门景点收尾。`;
     match = String(value).match(/^A signature (.+) highlight\. Check opening hours before visiting\.$/); if (match) return `${match[1]} 的代表性景点，出发前请确认开放时间。`;
     match = String(value).match(/^(.+) · (\d+(?:\.\d+)?) km from (.+) · about (.+) min\..*$/); if (match) return `${match[1]} · 距离 ${match[3]} ${match[2]} 公里 · 约 ${match[4]} 分钟`;
-    const sentences = {'Set actual cost':'填写实际花费','Open listing':'查看地点','Flexible':'弹性安排','Near your stay.':'住宿附近。','Check in to your stay':'入住住宿','Add your confirmed hotel, homestay, or hostel here.':'在这里添加已确认的酒店、民宿或青旅。','A relaxed final meal before checkout.':'退房前轻松吃最后一餐。','A final meal near your stay.':'住宿附近的最后一餐。','A casual first stop near your stay.':'抵达后在住宿附近轻松停留。','A well-reviewed option near your stay.':'住宿附近评价不错的选择。','A short, easy stop before departure.':'出发前轻松短暂停留。','Allow extra time for luggage, traffic, and the airport or station.':'为行李、交通以及机场或车站预留充足时间。','Allow extra time for luggage and traffic.':'为行李和交通预留充足时间。'};
+    const sentences = {'Set actual cost':'填写实际花费','Open listing':'查看地点','Flexible':'弹性安排','Near your stay.':'住宿附近。','Check in to your stay':'入住住宿','Add your confirmed hotel, homestay, or hostel here.':'在这里添加已确认的酒店、民宿或青旅。','Confirmed accommodation':'已确认住宿','Included in stay':'已包含在住宿费用中','Your confirmed stay was added to day one':'已将确认的住宿添加到第一天','Check-in and check-out were added and matched to your transport':'已添加入住和退房，并与交通时间匹配','A relaxed final meal before checkout.':'退房前轻松吃最后一餐。','A final meal near your stay.':'住宿附近的最后一餐。','A casual first stop near your stay.':'抵达后在住宿附近轻松停留。','A well-reviewed option near your stay.':'住宿附近评价不错的选择。','A short, easy stop before departure.':'出发前轻松短暂停留。','Allow extra time for luggage, traffic, and the airport or station.':'为行李、交通以及机场或车站预留充足时间。','Allow extra time for luggage and traffic.':'为行李和交通预留充足时间。'};
     if (sentences[value]) return sentences[value];
     const prefixes = {'Breakfast:':'早餐：','Lunch:':'午餐：','Afternoon tea:':'下午茶：','Dinner:':'晚餐：','Welcome bite:':'抵达第一口：','Slow café:':'慢享咖啡：','Last local bite:':'最后一口当地风味：','A quiet pause:':'安静休息：','Check in:':'入住：','Check out:':'退房：','Must-visit:':'必去：','Open listing':'查看地点'};
     for (const [from,to] of Object.entries(prefixes)) if (String(value).toLowerCase().startsWith(from.toLowerCase())) { const rest=String(value).slice(from.length).trim(); return `${to}${translate(rest)}`; }
