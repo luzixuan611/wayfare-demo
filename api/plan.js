@@ -126,7 +126,11 @@ export default async function handler(request, response) {
     const stays = byTag(places, tags => accommodation === 'hostel' ? tags.tourism === 'hostel' : accommodation === 'homestay' ? tags.tourism === 'guest_house' : tags.tourism === 'hotel');
     const hotel = pick(stays, 0, pick(byTag(places, tags => ['hotel','guest_house','hostel'].includes(tags.tourism)), 0, pointPlace('Stay near city center', center)));
     const city = center.name.split(',')[0];
-    const required = mustResult ? pointPlace(mustVisit, mustResult) : null;
+    // Always preserve the user's must-visit request, even if the place lookup
+    // is temporarily unavailable. The center point keeps it visible on the
+    // timeline and lets the user refine the location later.
+    const required = mustVisit ? pointPlace(mustVisit, mustResult || center) : null;
+    const requiredDetail = mustResult ? 'Priority stop · Open data lookup' : 'Priority stop · Added from your request';
     const fallbackSights = Array.from({ length: 8 }, (_, index) => fallbackSight(city, center, index));
     const sightKey = place => String(place.tags?.wikidata || place.tags?.wikipedia || place.name).toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]/g, '');
     const requiredKey = required ? sightKey(required) : null;
@@ -151,7 +155,7 @@ export default async function handler(request, response) {
         : (travelStyle === 'food' ? `Eat your way through ${city}` : travelStyle === 'recharge' ? `A slower day in ${city}` : `${city}, at your own pace`);
       const items = firstDay ? [
         item('15:00', 'stay', '⌂', `Check in: ${hotel.name}`, `${detail(hotel)} · ${accommodation}`, 'Set actual cost', hotel),
-        ...(required ? [item('17:00', 'sight', '★', `Must-visit: ${required.name}`, 'Priority stop · Open data lookup', 'Priority stop', required)] : []),
+        ...(required ? [item('17:00', 'sight', '★', `Must-visit: ${required.name}`, requiredDetail, 'Priority stop', required)] : []),
         ...(travelStyle === 'food' ? [item(required ? '18:30' : '17:30', 'food', '☕', `Welcome bite: ${mealAt(index).name}`, `${detail(mealAt(index))} · Chosen near your stay`, 'Set actual cost', mealAt(index)), item('20:30', 'food', '♨', `Dinner: ${mealAt(index + 1).name}`, `${detail(mealAt(index + 1))} · Chosen near your stay`, 'Set actual cost', mealAt(index + 1))] : travelStyle === 'recharge' ? [item(required ? '18:30' : '17:30', 'food', '☕', `Slow café: ${mealAt(index).name}`, `${detail(mealAt(index))} · A gentle stop near your stay`, 'Set actual cost', mealAt(index))] : [item(required ? '19:00' : '17:30', 'sight', '◉', attraction.name, detail(attraction), 'Open listing', attraction), item('20:30', 'food', '♨', `Dinner: ${mealAt(index).name}`, `${detail(mealAt(index))} · Chosen near your stay`, 'Set actual cost', mealAt(index))])
       ] : finalDay ? [
         item('09:30', 'food', '☕', `Breakfast: ${mealAt(index).name}`, `${detail(mealAt(index))} · Chosen near your stay`, 'Set actual cost', mealAt(index)),
