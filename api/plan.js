@@ -132,12 +132,27 @@ export default async function handler(request, response) {
     const required = mustVisit ? pointPlace(mustVisit, mustResult || center) : null;
     const requiredDetail = mustResult ? 'Priority stop · Open data lookup' : 'Priority stop · Added from your request';
     const fallbackSights = Array.from({ length: 8 }, (_, index) => fallbackSight(city, center, index));
-    const sightKey = place => String(place.tags?.wikidata || place.tags?.wikipedia || place.name).toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]/g, '');
+    // Compare place names canonically so `west lake`, `West Lake`, and
+    // punctuation/spacing variants are treated as the same stop.
+    const sightKey = place => String(place.tags?.wikidata || place.tags?.wikipedia || place.name)
+      .normalize('NFKC').toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]/g, '');
     const requiredKey = required ? sightKey(required) : null;
     const sightPool = [...sights, ...fallbackSights].filter((place, index, list) => sightKey(place) !== requiredKey && list.findIndex(other => sightKey(other) === sightKey(place)) === index);
     const nearStay = list => [...list].sort((a, b) => distanceKm(hotel.point, a.point) - distanceKm(hotel.point, b.point));
     const nearbyFood = nearStay(food.length ? food : [pointPlace('Local food near your stay', center)]);
     const nearbySights = nearStay(sightPool);
+    const usedSightKeys = new Set();
+    const chooseSight = (pool, start = 0) => {
+      if (!pool.length) return pointPlace('Local highlight', center);
+      for (let step = 0; step < pool.length; step += 1) {
+        const candidate = pool[(start + step) % pool.length];
+        const key = sightKey(candidate);
+        if (!usedSightKeys.has(key)) { usedSightKeys.add(key); return candidate; }
+      }
+      // There are more itinerary slots than open-data sights. Reuse only as
+      // a last resort, after every unique candidate has been shown once.
+      return pool[start % pool.length];
+    };
     const mealAt = index => nearbyFood[index % nearbyFood.length];
     const selectedDates = tripDates(dates);
     const itineraryDates = selectedDates.length ? selectedDates : [new Date()];
@@ -147,8 +162,9 @@ export default async function handler(request, response) {
       const firstDay = index === 0;
       const finalDay = index === itineraryDates.length - 1;
       const slot = firstDay ? 0 : finalDay ? (itineraryDates.length * 2 - 3) : (index * 2 - 1);
-      const attraction = (travelStyle === 'recharge' ? nearbySights : sightPool)[(slot + offset) % sightPool.length];
-      const laterAttraction = (travelStyle === 'recharge' ? nearbySights : sightPool)[(slot + offset + 1) % sightPool.length];
+      const sightOptions = travelStyle === 'recharge' ? nearbySights : sightPool;
+      const attraction = chooseSight(sightOptions, slot + offset);
+      const laterAttraction = chooseSight(sightOptions, slot + offset + 1);
       const title = firstDay
         ? (travelStyle === 'food' ? `A first taste of ${city}` : travelStyle === 'recharge' ? `A gentle arrival in ${city}` : `Welcome to ${city}`)
         : finalDay ? `A final easy day in ${city}`
@@ -178,7 +194,9 @@ export default async function handler(request, response) {
       ];
       return { ...meta, title, weather: '✦ Explore', items: addTravelLegs(items) };
     });
-    const recommendationPlaces = [...nearbyFood.slice(0, 5), ...nearbySights.slice(0, 3)].filter((place, index, list) => list.findIndex(other => other.name === place.name) === index).slice(0, 5);
+    const recommendationPlaces = [...nearbyFood.slice(0, 5), ...nearbySights.slice(0, 3)]
+      .filter((place, index, list) => list.findIndex(other => sightKey(other) === sightKey(place)) === index)
+      .slice(0, 5);
     const recommendations = recommendationPlaces.map((place, index) => [place.tags?.amenity ? '🍜' : '🌿', place.name, place.tags?.['addr:street'] || city, 'OpenStreetMap listing']);
     return response.status(200).json({ city, dates, travelers, accommodation, source: 'open', estimate: budget ? `¥${budget}` : null, trips, recommendations, priceAlert });
   } catch {
